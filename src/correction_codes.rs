@@ -1,78 +1,87 @@
-use create::qubit::Qubit;
-use create::gates::*;
+use crate::qubit::Qubit;
+use crate::gates::*;
 
 pub trait CorrectionCode{
     fn encode(&self, data: &Qubit) -> Vec<Qubit>;
     fn syndrome_measurement(&self, encoded_qubits: &mut Vec<Qubit>) -> Vec<bool>;
     fn correct(&self, encoded_qubits: &mut Vec<Qubit>, syndromes: Vec<bool>);
     fn decode(&self, encoded_qubits: &mut Vec<Qubit>) -> Qubit;
+
+    fn get_average_correction_time(&self) -> f64;
 }
 
 pub struct BitFlipCode;
 
 impl CorrectionCode for BitFlipCode {
     /// Implement the Bit Flip
-    fn encode(&self, data: &Qubit) -> Vec<Qubit>{
+    fn encode(&self, data: &Qubit) -> Vec<Qubit> {
         // Create three qubits with the same state as the input qubit
         let mut encoded_qubits = vec![data.clone(), data.clone(), data.clone()];
 
-        // Apply a CNOT gate to the first two qubits
-        CNOT.apply(&mut encoded_qubits[0], &mut encoded_qubits[1]);
-        CNOT.apply(&mut encoded_qubits[0], &mut encoded_qubits[2]);
+        // Split the vector into disjoint mutable slices
+        let (q0_slice, rest) = encoded_qubits.split_at_mut(1);
+        let q0 = &mut q0_slice[0];
+        let (q1, q2) = rest.split_at_mut(1);
+
+        // Apply CNOT gates
+        CNOT::apply(q0, &mut q1[0]);
+        CNOT::apply(q0, &mut q2[0]);
 
         // Return the encoded qubits
         encoded_qubits
     }
 
     fn syndrome_measurement(&self, encoded_qubits: &mut Vec<Qubit>) -> Vec<bool> {
-        // Measure syndromes (parity Checks)
+        // For a 3-qubit bit flip code, we need 2 syndrome bits
         let mut syndromes = vec![false, false];
-        // Measure the first two qubits
-        let first_syndrome = encoded_qubits[0].measure() ^ encoded_qubits[1].measure();
-        let second_syndrome = encoded_qubits[0].measure() ^ encoded_qubits[2].measure();
 
-        // Store the results in the syndromes vector
-        syndromes[0] = first_syndrome;
-        syndromes[1] = second_syndrome;
+        // Get measurement results (we should measure only once per qubit)
+        let q0_result = encoded_qubits[0].measure();
+        let q1_result = encoded_qubits[1].measure();
+        let q2_result = encoded_qubits[2].measure();
 
-        // Return the syndromes
+        // Calculate syndromes
+        // First syndrome is parity of qubit 0 and 1
+        syndromes[0] = q0_result ^ q1_result;
+
+        // Second syndrome is parity of qubit 0 and 2
+        syndromes[1] = q0_result ^ q2_result;
+
         syndromes
     }
 
-    fn correct(&self, encoded_qubits: &Vec<Qubit>) -> Qubit {
-        // Apply correction based on the syndrome
-        let mut corrected_qubits = encoded_qubits.clone();
-
-        // Check the syndromes and apply corrections
-        if syndromes[0] {
-            // Apply PauliX to the first qubit
-            PauliX.apply(&mut corrected_qubits[0]);
+    fn correct(&self, encoded_qubits: &mut Vec<Qubit>, syndromes: Vec<bool>) {
+        // Use the syndromes parameter instead of looking for a syndromes variable
+        if syndromes.len() >= 2 {
+            if syndromes[0] && syndromes[1] {
+                PauliX.apply(&mut encoded_qubits[0]);
+            }
+            // Only first syndrome true: error on qubit 1
+            else if syndromes[0] {
+                PauliX.apply(&mut encoded_qubits[1]);
+            }
+            // Only second syndrome true: error on qubit 2
+            else if syndromes[1] {
+                PauliX.apply(&mut encoded_qubits[2]);
+            }
         }
 
-        if syndromes[1] {
-            // Apply PauliX to the second qubit
-            PauliX.apply(&mut corrected_qubits[1]);
-        }
-
-        if syndromes[2] {
-            // Apply PauliX to the third qubit
-            PauliX.apply(&mut corrected_qubits[2]);
-        }
-
-        // Return the corrected qubit
-        corrected_qubits[0].clone()
     }
-
-    fn decode(&self, encoded_qubits: &Vec<Qubit>) -> Qubit {
+    fn decode(&self, encoded_qubits: &mut Vec<Qubit>) -> Qubit {
         // Return the corrected logical qubit
         let mut decoded_qubit = encoded_qubits[0].clone();
 
         // Apply CNOT gates to decode the qubits
-        CNOT.apply(&mut decoded_qubit, &mut encoded_qubits[1]);
-        CNOT.apply(&mut decoded_qubit, &mut encoded_qubits[2]);
+        CNOT::apply(&mut decoded_qubit, &mut encoded_qubits[1]);
+        CNOT::apply(&mut decoded_qubit, &mut encoded_qubits[2]);
 
         // Return the decoded qubit
         decoded_qubit
+    }
+
+    fn get_average_correction_time(&self) -> f64 {
+        // Placeholder implementation, replace with actual logic if needed
+        0.01
     }
 }
 

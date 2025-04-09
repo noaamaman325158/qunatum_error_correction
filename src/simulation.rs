@@ -1,6 +1,6 @@
-use create::qubit::Qubit;
-use create::error_models::ErrorModel;
-use create::gates::CorrectionModel;
+use crate::qubit::Qubit;
+use crate::error_models::ErrorModel;
+use crate::correction_codes::CorrectionCode;
 
 pub struct Simulation {
     error_model: Box<dyn ErrorModel>,

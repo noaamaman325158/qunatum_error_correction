@@ -1,5 +1,5 @@
-use create::qubit::Qubnit;
-use create::gates::{PauliX, PauliZ, Gate};
+use crate::qubit::Qubit;
+use crate::gates::{PauliX, PauliZ, Gate};
 
 pub trait ErrorModel {
     fn apply_error(&self, qubit: &mut Qubit);
@@ -19,7 +19,7 @@ impl BitFlipNoise{
 
 impl ErrorModel for BitFlipNoise {
     fn apply_error(&self, qubit: &mut Qubit){
-        if rand::rnadom::<f64> < self.probability {
+        if rand::random::<f64>() < self.probability {
             PauliX.apply(qubit);
         }
     }
