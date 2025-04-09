@@ -1,0 +1,8 @@
+[
+dependencies
+]
+num-complex = "0.4.3"
+ndarray = "0.15.4"
+rand = "0.8.5"
+plotters = "0.3.5"
+
