@@ -1,6 +1,5 @@
 use num_complex::Complex64;
 
-
 #[derive(Clone)]
 pub struct Qubit {
     /// The state of the qubit, represented as a 2D array of complex numbers.
@@ -10,7 +9,7 @@ pub struct Qubit {
 
 impl Qubit {
     pub fn new() -> Self {
-        /// Initialize to |0> state
+        // Initialize to |0> state
         Self {
             state: [Complex64::new(1.0, 0.0), Complex64::new(0.0, 0.0)],
         }
@@ -22,15 +21,22 @@ impl Qubit {
         random > zero_prob
     }
 
-    pub fn swap_state(&mut self){
+    pub fn swap_state(&mut self) {
         self.state.swap(0, 1);
     }
 
-    pub fn apply_phase_flip(&mut self){
-        self.state[1] = Complex64::new(-self.state[1].re, self.state[1].im);
+    pub fn apply_phase_flip(&mut self) {
+        self.state[1] = Complex64::new(-self.state[1].re, -self.state[1].im);
     }
 
+    // Add these methods for Hadamard implementation
+    pub fn get_state(&self) -> [Complex64; 2] {
+        self.state
+    }
 
+    pub fn set_state(&mut self, index: usize, value: Complex64) {
+        self.state[index] = value;
+    }
 }
 
 impl PartialEq for Qubit {
