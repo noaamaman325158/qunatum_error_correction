@@ -27,7 +27,7 @@ impl Simulation {
         }
     }
 
-    pub fn run(&self) -> SimulationResult{
+    pub fn run(&mut self) -> SimulationResult {
         // Run the simulation multiple times
         let mut success_count = 0;
 

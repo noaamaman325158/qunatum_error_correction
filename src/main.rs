@@ -19,10 +19,11 @@ fn main() {
     let error_model = Box::new(BitFlipNoise::new(0.1));
 
     // Create a bit flip correction code
-    let correction_code = Box::new(BitFlipCode);
+    let correction_code = Box::new(BitFlipCode::new());
 
     // Set up simulation with 1000 runs
-    let simulation = Simulation::new(error_model, correction_code, 1000);
+    let mut simulation = Simulation::new(error_model, correction_code, 1000);
+
 
     // Run the simulation
     let result = simulation.run();

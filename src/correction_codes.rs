@@ -1,16 +1,27 @@
 use crate::qubit::Qubit;
 use crate::gates::*;
+use std::time::{Duration, Instant};
 
-pub trait CorrectionCode{
+pub trait CorrectionCode {
     fn encode(&self, data: &Qubit) -> Vec<Qubit>;
     fn syndrome_measurement(&self, encoded_qubits: &mut Vec<Qubit>) -> Vec<bool>;
-    fn correct(&self, encoded_qubits: &mut Vec<Qubit>, syndromes: Vec<bool>);
+    fn correct(&mut self, encoded_qubits: &mut Vec<Qubit>, syndromes: Vec<bool>); // Changed to &mut self
     fn decode(&self, encoded_qubits: &mut Vec<Qubit>) -> Qubit;
 
     fn get_average_correction_time(&self) -> f64;
 }
 
-pub struct BitFlipCode;
+pub struct BitFlipCode{
+    correction_time: Vec<Duration>,
+}
+
+impl BitFlipCode{
+    pub fn new() -> Self {
+        Self {
+            correction_time: Vec::new(),
+        }
+    }
+}
 
 impl CorrectionCode for BitFlipCode {
     /// Implement the Bit Flip
@@ -50,7 +61,9 @@ impl CorrectionCode for BitFlipCode {
         syndromes
     }
 
-    fn correct(&self, encoded_qubits: &mut Vec<Qubit>, syndromes: Vec<bool>) {
+    fn correct(&mut self, encoded_qubits: &mut Vec<Qubit>, syndromes: Vec<bool>) {
+        let start = Instant::now();
+
         // Use the syndromes parameter instead of looking for a syndromes variable
         if syndromes.len() >= 2 {
             if syndromes[0] && syndromes[1] {
@@ -66,6 +79,9 @@ impl CorrectionCode for BitFlipCode {
             }
         }
 
+        let duration = start.elapsed();
+
+        self.correction_time.push(duration);
     }
     fn decode(&self, encoded_qubits: &mut Vec<Qubit>) -> Qubit {
         // Return the corrected logical qubit
@@ -80,8 +96,14 @@ impl CorrectionCode for BitFlipCode {
     }
 
     fn get_average_correction_time(&self) -> f64 {
-        // Placeholder implementation, replace with actual logic if needed
-        0.01
+        if self.correction_time.is_empty(){
+            return 0.0
+        }
+
+        let total = self.correction_time.iter()
+            .fold(Duration::new(0, 0), |acc, &x| acc + x);
+
+        total.as_secs_f64() / self.correction_time.len() as f64
     }
 }
 
